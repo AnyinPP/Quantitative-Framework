@@ -1,0 +1,47 @@
+# Agents generated for Vissim Plot of Agents vs. Real Execution Time
+import win32com.client
+import matplotlib.pyplot as plt
+import time
+
+# === Load Vissim ===
+vissim = win32com.client.Dispatch("Vissim.Vissim")
+vissim.LoadNet(r"C:\Users\anyin\Desktop\SUMO Test1\PTV Square 10km.inp0")
+vissim.LoadLayout(r"C:\Users\anyin\Desktop\SUMO Test1\PTV Square 10km.layx")
+
+# === Simulation settings ===
+vissim.Simulation.SetAttValue("SimRes", 1)        # 5 steps/sec
+vissim.Simulation.SetAttValue("SimPeriod", 18000)  # Simulate 300 mins
+vissim.Simulation.SetAttValue("RandSeed", 99)
+vissim.Simulation.SetAttValue("UseMaxSimSpeed", True)
+vissim.Simulation.SetAttValue("SimBreakAt", 0)
+
+# === Start the simulation ===
+vissim.Simulation.RunSingleStep()
+
+# === Data collectors ===
+timestamps = []
+agent_counts = []
+
+start_time = time.time()
+
+for step in range(0, 1800 * 5):  # total simulation time in steps
+    vissim.Simulation.RunSingleStep()
+
+    # Every simulated 2 seconds, collect data
+    if step % 10 == 0:
+        current_time = time.time() - start_time
+        agents = len(vissim.Net.Vehicles.GetAll())
+        timestamps.append(current_time)
+        agent_counts.append(agents)
+
+    time.sleep(0.001)  # keep the CPU happy
+
+# === Plotting ===
+plt.figure(figsize=(10, 6))
+plt.plot(timestamps, agent_counts, marker='o', linestyle='-')
+plt.xlabel("Real Time (seconds)")
+plt.ylabel("Number of Agents in Simulation")
+plt.title("Agents Generated Over Real Time")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
