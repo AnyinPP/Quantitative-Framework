@@ -1,0 +1,4 @@
+Then runtime and memory usage are determine differently.
+
+Memory usage, was monitored in the task manager prompt during the execusion of the file using the MATSim Java prompt.
+The runtime was tracked using the GUI and the system real time
