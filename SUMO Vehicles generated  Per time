@@ -1,0 +1,48 @@
+# SUMO Plot of Agents vs. Real Execution Time
+# SUMO vehicles generated 
+
+import traci
+import sumolib
+import time
+import matplotlib.pyplot as plt
+
+# === CONFIGURATION ===
+sumo_binary = "sumo"  # or "sumo-gui" for visual run  C:\Users\anyin\Desktop\SUMO Test1\simple20.sumocfg
+sumo_config = "Users/anyin/Desktop/SUMO Test1/simple20.sumocfg"
+#sumo_config = "C:\Users\john\Desktop\Scenario 2\SUMO generatedvsTime.py"
+
+# === Start SUMO with TraCI (this sandwitches the simulation and databank) ===
+traci.start([sumo_binary, "-c", sumo_config])
+
+# === Tracking variables for time and agents ===
+
+timestamps = []
+agent_counts = []
+start_time = time.time()
+
+# === Run simulation using Traci===
+
+while traci.simulation.getMinExpectedNumber() > 0:
+    traci.simulationStep()
+
+    # Every 1 simulated second (1000 ms)
+    if traci.simulation.getTime() % 1 == 0:
+        current_wall_time = time.time() - start_time
+        all_vehicles = traci.vehicle.getIDList()
+        vehicle_count = len(all_vehicles)
+
+        timestamps.append(current_wall_time)
+        agent_counts.append(vehicle_count)
+
+# === Close SUMO Using Traci command ===
+traci.close()
+
+# === Plotting ===
+plt.figure(figsize=(10, 6))
+plt.plot(timestamps, agent_counts, marker='o', linestyle='-')
+plt.xlabel("Real Time (seconds)")
+plt.ylabel("Number of Agents in Simulation")
+plt.title("Agents Generated Over Real Time (SUMO)")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
