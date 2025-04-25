@@ -1,0 +1,54 @@
+# This is for SUMO memory and execution time tracking. This require Traci and psutil
+
+import traci
+import psutil
+import time
+import matplotlib.pyplot as plt
+import subprocess
+
+# === Configuration ===
+sumo_binary = "sumo"  # or "sumo-gui"
+sumo_config = "path/to/your/scenario.sumocfg"
+
+# === Launch SUMO as a subprocess ===
+sumo_process = subprocess.Popen([sumo_binary, "-c", sumo_config], stdout=subprocess.DEVNULL)
+
+# === Connect to TraCI ===
+time.sleep(1)  # Let SUMO launch
+traci.connect()
+
+# === Identify SUMO process for memory monitoring ===
+sumo_pid = sumo_process.pid
+sumo_proc = psutil.Process(sumo_pid)
+
+# === Data trackers ===
+start_time = time.time()
+timestamps = []
+mem_usage_mb = []
+
+# === Run Simulation ===
+while traci.simulation.getMinExpectedNumber() > 0:
+    traci.simulationStep()
+
+    if int(traci.simulation.getTime()) % 1 == 0:  # Every simulated second
+        wall_time = time.time() - start_time
+        mem = sumo_proc.memory_info().rss / (1024 ** 2)  # In MB
+
+        timestamps.append(wall_time)
+        mem_usage_mb.append(mem)
+
+        print(f"Time: {wall_time:.2f}s | Memory: {mem:.2f} MB")
+
+# === Close everything ===
+traci.close()
+sumo_process.terminate()
+
+# === Plotting ===
+plt.figure(figsize=(10, 6))
+plt.plot(timestamps, mem_usage_mb, marker='o', linestyle='-', color='green')
+plt.xlabel("Execution Time (s)")
+plt.ylabel("Memory Usage (MB)")
+plt.title("SUMO Memory Usage Over Execution Time")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
