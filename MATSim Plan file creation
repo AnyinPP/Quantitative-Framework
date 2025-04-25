@@ -1,0 +1,79 @@
+#This was done using 
+
+import xml.etree.ElementTree as ET
+import random
+
+# ========== CONFIG ==========
+NUM_PERSONS = 2000 #, 20000, 100000
+OUTPUT_FILE = "plan.xml"
+NETWORK_FILE = "network2.xml"
+# =============================
+
+# Parse the network file to get link connectivity
+network_tree = ET.parse(NETWORK_FILE)
+network_root = network_tree.getroot()
+
+links = {}
+link_from = {}
+link_to = {}
+
+for link in network_root.find('links').findall('link'):
+    lid = link.attrib['id']
+    from_node = link.attrib['from']
+    to_node = link.attrib['to']
+    links[lid] = (from_node, to_node)
+    link_from.setdefault(from_node, []).append(lid)
+    link_to.setdefault(to_node, []).append(lid)
+
+def get_connected_route(start_link):
+    """Generate a valid route starting from a link by following connectivity."""
+    route = [start_link]
+    current_to_node = links[start_link][1]
+    visited = {start_link}
+    while True:
+        next_links = link_from.get(current_to_node, [])
+        valid_next = [l for l in next_links if l not in visited]
+        if not valid_next or random.random() < 0.5:
+            break
+        next_link = random.choice(valid_next)
+        route.append(next_link)
+        visited.add(next_link)
+        current_to_node = links[next_link][1]
+    return route
+
+# Create XML structure
+plans_root = ET.Element('plans', {"xml:lang": "en"})
+
+for pid in range(1, NUM_PERSONS + 1):
+    person = ET.SubElement(plans_root, "person", {"id": str(pid)})
+    plan = ET.SubElement(person, "plan", {"selected": "yes"})
+
+    # Random home start link
+    home_link = random.choice(list(links.keys()))
+    work_start_link = random.choice(list(links.keys()))
+
+    # HOME ACTIVITY
+    ET.SubElement(plan, "act", {"type": "h", "link": home_link, "end_time": "07:30"})
+
+    # LEG to work
+    route_to_work = get_connected_route(home_link)
+    leg1 = ET.SubElement(plan, "leg", {"mode": "car"})
+    ET.SubElement(leg1, "route").text = " ".join(route_to_work)
+
+    # WORK ACTIVITY
+    ET.SubElement(plan, "act", {"type": "w", "link": work_start_link, "dur": "08:00"})
+
+    # LEG to home
+    route_to_home = get_connected_route(work_start_link)
+    leg2 = ET.SubElement(plan, "leg", {"mode": "car"})
+    ET.SubElement(leg2, "route").text = " ".join(route_to_home)
+
+    # Final HOME ACTIVITY
+    ET.SubElement(plan, "act", {"type": "h", "link": home_link})
+
+# Write to file
+tree = ET.ElementTree(plans_root)
+ET.indent(tree, space="  ", level=0)
+tree.write(OUTPUT_FILE, encoding="utf-8", xml_declaration=True)
+
+print(f"✅ Successfully generated {OUTPUT_FILE} with {NUM_PERSONS} persons.")
