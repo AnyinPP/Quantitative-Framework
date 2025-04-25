@@ -1,0 +1,63 @@
+# The test for Shapiro-Wilk test, Standard Deviation, mean and range of 95% confidence level for all the test
+
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
+
+# Sample data: Replace this with your actual runtimes
+runtimes = np.array([60.37870897, 61.81182326, 61.67521133, 60.62277847, 61.48047701, 60.65926914, 61.64207655, 62.04676852, 60.40926384, 61.3891726, 61.06959311, 61.59676751, 61.62606499, 60.63210693, 61.45482223, 61.29385755, 60.42064054, 60.7617014, 61.93901096, 61.96626448, 60.87815194, 60.54705885, 60.6903402, 61.8428229, 61.12904214, 60.43467415, 61.11303786, 61.3808302, 61.78498476, 61.30771254, 61.53148143, 61.39177742, 60.71195066, 60.91662013, 61.99548236, 61.15920481, 61.07549102, 60.68305866, 60.51487558, 60.79880851, 61.69087792, 61.66766794, 61.54316735, 61.59178669, 61.06959311, 61.59676751, 61.62606499, 60.63210693, 61.45482223, 61.29385755, 60.42064054, 60.7617014, 61.93901096, 61.96626448])
+
+# Descriptive statistics
+mean = np.mean(runtimes)
+median = np.median(runtimes)
+std_dev = np.std(runtimes, ddof=1)  # Sample standard deviation
+min_val = np.min(runtimes)
+max_val = np.max(runtimes)
+cv = std_dev / mean
+
+print(f"Mean: {mean:.4f}")
+print(f"Median: {median:.4f}")
+print(f"Standard Deviation: {std_dev:.4f}")
+print(f"Min: {min_val:.4f}, Max: {max_val:.4f}")
+print(f"Coefficient of Variation: {cv:.4f}")
+
+# Confidence interval for the mean (95%)
+confidence = 0.95
+n = len(runtimes)
+sem = std_dev / np.sqrt(n)
+t_score = stats.t.ppf((1 + confidence) / 2, df=n-1)
+margin_of_error = t_score * sem
+ci_lower = mean - margin_of_error
+ci_upper = mean + margin_of_error
+
+print(f"95% Confidence Interval for Mean: ({ci_lower:.4f}, {ci_upper:.4f})")
+
+# Normality test
+shapiro_test = stats.shapiro(runtimes)
+print(f"Shapiro-Wilk Test p-value: {shapiro_test.pvalue:.4f}")
+if shapiro_test.pvalue > 0.05:
+    print("Data appears normally distributed.")
+else:
+    print("Data may not be normally distributed.")
+
+# Boxplot
+plt.figure(figsize=(8, 4))
+sns.boxplot(x=runtimes)
+plt.title("Boxplot of SUMO Memory")
+plt.xlabel("Memory (Mb)")
+plt.show()
+
+# Histogram
+plt.figure(figsize=(8, 4))
+sns.histplot(runtimes, kde=True, bins=10)
+plt.title("Histogram of SUMO Memory Utility Scenario II")
+plt.xlabel("Memory (Mb)")
+plt.ylabel("Frequency")
+plt.show()
+
+# QQ plot for normality check
+stats.probplot(runtimes, dist="norm", plot=plt)
+plt.title("QQ Plot of Runtimes")
+plt.grid()
+plt.show()
